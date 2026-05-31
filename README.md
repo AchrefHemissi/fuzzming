@@ -176,7 +176,18 @@ fuzzming config --reset
 | `fuzzming report` | Print a summary of the last run's artifacts |
 | `fuzzming config` | View or reset the saved `fuzzming.config` |
 
-### `fuzzming run` flags
+### Global flags
+
+| Flag | Description |
+|---|---|
+| `--help`, `-h` | Print the full CLI reference |
+| `--version` | Print the installed version |
+
+---
+
+### `fuzzming run`
+
+Start a fuzzing session against one or more contracts. Loads `fuzzming.config` if present, then prompts for any missing values. Use `--defaults` or `--from-config` to skip all prompts entirely.
 
 | Flag | Default | Description |
 |---|---|---|
@@ -193,6 +204,55 @@ fuzzming config --reset
 | `--interactive` | false | Force interactive prompts even when config exists |
 | `--demo` | false | Mock run: full UI, no LLM calls, no tokens spent |
 | `--verbose` | false | Enable verbose trace logs |
+
+```bash
+fuzzming run                                          # interactive: prompts for missing values
+fuzzming run --targets src/Vault.sol --max-rounds 5   # explicit flags, no prompts
+fuzzming run --defaults --targets src/Vault.sol       # skip prompts, use flags/env vars
+fuzzming run --from-config                            # skip prompts, read from fuzzming.config
+fuzzming run --interactive                            # force prompts even if config exists
+fuzzming run --demo                                   # mock run, no LLM calls
+```
+
+---
+
+### `fuzzming guide`
+
+Print the full CLI reference and examples to stdout. No flags.
+
+```bash
+fuzzming guide
+```
+
+---
+
+### `fuzzming report`
+
+Print a summary of a previous run. Reads `.fuzzming/<Contract>/` artifacts written during the last session, showing per-contract coverage percentage and confirmed bugs.
+
+| Flag | Default | Description |
+|---|---|---|
+| `--workspace-root <DIR>` | `.` | Foundry project root to read artifacts from |
+
+```bash
+fuzzming report
+fuzzming report --workspace-root ./my-project
+```
+
+---
+
+### `fuzzming config`
+
+View or reset the saved `fuzzming.config`. Without flags: prints all saved keys with the API key masked. With `--reset`: deletes the file so the next run re-prompts for all settings.
+
+| Flag | Default | Description |
+|---|---|---|
+| `--reset` | false | Delete `fuzzming.config`; next run will re-prompt |
+
+```bash
+fuzzming config           # view saved settings (API key masked)
+fuzzming config --reset   # delete config and re-prompt on next run
+```
 
 ---
 
