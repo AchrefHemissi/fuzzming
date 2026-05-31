@@ -11,7 +11,7 @@
 - [Full wiring graph](#full-wiring-graph)
 - [`LiteLlmClient` configuration](#litellmclient-configuration)
 - [`LiteLlmGenerationAdapter`: prompt mode](#litellmgenerationadapter-prompt-mode)
-- [`LiteLlmSecurityAnalysisAdapter`: optional analyzer](#litellmsecurityanalysisadapter-optional-analyzer)
+- [`GeneratorSecurityAnalysis`: optional analyzer](#generatorsecurityanalysis-optional-analyzer)
 - [`RunFuzzerUseCase`: compile-error isolation](#runfuzzerusecase-compile-error-isolation)
 - [Adding a new language or fuzzer](#adding-a-new-language-or-fuzzer)
 - [Hard rule](#hard-rule)
@@ -80,6 +80,10 @@ CompositionRoot::build(config)
     └─ RunSessionUseCase  (Box<dyn OrchestratorRunPort>)
         receives all five components above as Box<dyn Port>
         optional SecurityAnalysisPort wired via with_security_analyzer()
+│
+└─ GeneratorSecurityAnalysis  (Box<dyn SecurityAnalysisPort>)
+    └─ LiteLlmSecurityAnalysisAdapter  (Box<dyn AnalysisGateway>)
+        └─ LiteLlmClient  (Arc<dyn LlmClientPort>)  ← same instance as the generator above
 ```
 
 ---
@@ -117,12 +121,18 @@ let generation_adapter = Box::new(LiteLlmGenerationAdapter::new(
 
 ---
 
-## `LiteLlmSecurityAnalysisAdapter`: optional analyzer
+## `GeneratorSecurityAnalysis`: optional analyzer
 
-The security analyzer shares the same `LiteLlmClient` as the generator. It is wired into the
-orchestrator via `RunSessionUseCase::with_security_analyzer()` so patch rounds can request a
-separate analysis pass before generation. The analyzer is optional; if it is not wired, the
-session proceeds without the extra analysis stage.
+The security analyzer is wired as `Box<dyn SecurityAnalysisPort>` into the orchestrator via
+`RunSessionUseCase::with_security_analyzer()`. The concrete type is `GeneratorSecurityAnalysis`,
+the Generator component's inbound adapter for security analysis. It keeps the boundary clean:
+the orchestrator calls through the Generator's inbound, never reaching into its outbound adapters
+directly.
+
+Internally, `GeneratorSecurityAnalysis` holds a `Box<dyn AnalysisGateway>` fulfilled by
+`LiteLlmSecurityAnalysisAdapter`, which shares the same `Arc<LiteLlmClient>` as the generation
+adapter. The analyzer is optional; if it is not wired, the session proceeds without the extra
+analysis stage.
 
 ---
 

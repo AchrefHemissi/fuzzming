@@ -33,10 +33,12 @@ The Generator has one job: given the current state of the fuzzing session, produ
 src/generator/
 ├── adapters/
 │   ├── inbound/
-│   │   └── generator.rs                    # Inbound adapter: implements LlmEnginePort, delegates to GeneratorRunPort
+│   │   ├── generator.rs                    # Inbound adapter: implements LlmEnginePort, delegates to GeneratorRunPort
+│   │   └── security_analysis.rs            # Inbound adapter: implements SecurityAnalysisPort, delegates to AnalysisGateway
 │   └── outbound/
 │       ├── litellm_generation_adapter.rs   # Implements GenerationPort: orchestrates 3-stage call chain
 │       ├── litellm_client.rs               # Implements LlmClientPort: only file that imports litellm_rs
+│       ├── security_analysis_adapter.rs    # Implements AnalysisGateway: builds prompts, calls LlmClientPort
 │       ├── prompt_builder.rs               # Builds stage prompts for the 3-stage chain
 │       ├── response_parser.rs              # Extracts, parses, normalizes, repairs JSON responses
 │       └── stages.rs                       # AnalysisStage, BodiesStage, ConfigStage types
@@ -44,6 +46,7 @@ src/generator/
 │   ├── inbound/
 │   │   └── generator_run_port.rs           # GeneratorRunPort: inbound contract between adapter and use case
 │   └── outbound/
+│       ├── analysis_gateway.rs             # AnalysisGateway: outbound contract for security analysis calls
 │       ├── generation_port.rs              # GenerationPort + GenerationRequest
 │       └── llm_client_port.rs              # LlmClientPort: complete(system, user) -> String
 ├── use_cases/
@@ -68,21 +71,31 @@ The component follows hexagonal architecture. The inbound adapter never touches 
 ```
 Orchestrator
     │
-    └─ LlmEnginePort (shared/ports)
+    ├─ LlmEnginePort (shared/ports)
+    │      │
+    │  Generator (adapters/inbound)                    ← implements LlmEnginePort
+    │      │
+    │  GeneratorRunPort (ports/inbound)                ← inbound contract
+    │      │
+    │  GeneratorRunUseCase (use_cases)                 ← implements GeneratorRunPort, owns outbound ports
+    │      │
+    │  GenerationPort (ports/outbound)                 ← outbound contract
+    │      │
+    │  LiteLlmGenerationAdapter (adapters/outbound)    ← implements GenerationPort
+    │      │
+    │  LlmClientPort (ports/outbound)                  ← outbound contract (shared with security analysis)
+    │      │
+    │  LiteLlmClient (adapters/outbound)               ← implements LlmClientPort, only file calling litellm_rs
+    │
+    └─ SecurityAnalysisPort (shared/ports)
            │
-    Generator (adapters/inbound)                    ← implements LlmEnginePort
+    GeneratorSecurityAnalysis (adapters/inbound)    ← implements SecurityAnalysisPort
            │
-    GeneratorRunPort (ports/inbound)                ← inbound contract
+    AnalysisGateway (ports/outbound)               ← outbound contract
            │
-    GeneratorRunUseCase (use_cases)                 ← implements GeneratorRunPort, owns outbound ports
+    LiteLlmSecurityAnalysisAdapter (adapters/outbound) ← implements AnalysisGateway
            │
-    GenerationPort (ports/outbound)                 ← outbound contract
-           │
-    LiteLlmGenerationAdapter (adapters/outbound)    ← implements GenerationPort
-           │
-    LlmClientPort (ports/outbound)                  ← outbound contract
-           │
-    LiteLlmClient (adapters/outbound)               ← implements LlmClientPort, only file calling litellm_rs
+    LlmClientPort / LiteLlmClient                  ← same shared instance as above
 ```
 
 ### Inbound adapter: `adapters/inbound/generator.rs`

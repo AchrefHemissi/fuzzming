@@ -4,9 +4,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 use super::response_parser::extract_json_payload;
-use crate::generator::ports::outbound::LlmClientPort;
+use crate::generator::ports::outbound::{AnalysisGateway, LlmClientPort};
 use crate::shared::models::BugInfo;
-use crate::shared::ports::{SecurityAnalysisPort, SecurityAnalysisRequest};
+use crate::shared::ports::SecurityAnalysisRequest;
 
 pub struct LiteLlmSecurityAnalysisAdapter {
     client: Arc<dyn LlmClientPort>,
@@ -19,7 +19,7 @@ impl LiteLlmSecurityAnalysisAdapter {
 }
 
 #[async_trait]
-impl SecurityAnalysisPort for LiteLlmSecurityAnalysisAdapter {
+impl AnalysisGateway for LiteLlmSecurityAnalysisAdapter {
     async fn analyze(&self, request: SecurityAnalysisRequest) -> Result<String> {
         let system = build_system_prompt();
         let user = build_user_prompt(&request);

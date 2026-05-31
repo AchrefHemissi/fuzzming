@@ -8,7 +8,7 @@ use crate::executor::use_cases::ExecuteUseCase;
 use crate::fuzzer::adapters::inbound::Fuzzer as FuzzerAdapter;
 use crate::fuzzer::adapters::outbound::{FileSystemFuzzerOutput, ForgeRunner};
 use crate::fuzzer::use_cases::RunFuzzerUseCase;
-use crate::generator::adapters::inbound::Generator;
+use crate::generator::adapters::inbound::{Generator, GeneratorSecurityAnalysis};
 use crate::generator::adapters::outbound::{
     LiteLlmClient, LiteLlmGenerationAdapter, LiteLlmSecurityAnalysisAdapter,
 };
@@ -83,9 +83,10 @@ impl CompositionRoot {
             Box::new(TerminalOutput::new());
         let reporter = Box::new(Reporter::new(output));
 
-        // Security analyzer shares the same LLM client as the generator.
-        let security_analyzer =
+        // Security analyzer: outbound adapter → inbound adapter, keeping the boundary inside the generator component.
+        let analysis_gateway =
             Box::new(LiteLlmSecurityAnalysisAdapter::new(Arc::clone(&llm_client)));
+        let security_analyzer = Box::new(GeneratorSecurityAnalysis::new(analysis_gateway));
 
         // Orchestrator: coordinates the full multi-contract fuzzing session.
         let run_session = Box::new(

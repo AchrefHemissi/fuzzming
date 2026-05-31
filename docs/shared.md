@@ -127,7 +127,7 @@ Traits: the contracts each component must implement. The orchestrator depends on
 | `ExecutorPort` | `Executor` | `execute(ExecutorInput) -> Result<()>` |
 | `ReaderPort` | `Reader` | `get_contract_context`, `get_fuzz_output`, `get_coverage_context`, `get_existing_bodies`, `get_existing_config` |
 | `ReporterPort` | `Reporter` | `emit(SessionOutcome) -> Result<()>`, `emit_compile_error(round, msg)`, `emit_stage_event(event)`, `emit_round_usage(usage)` |
-| `SecurityAnalysisPort` | `LiteLlmSecurityAnalysisAdapter` | `analyze(SecurityAnalysisRequest) -> Result<String>` |
+| `SecurityAnalysisPort` | `GeneratorSecurityAnalysis` | `analyze(SecurityAnalysisRequest) -> Result<String>` |
 
 **`FuzzerEnginePort` is batch:** one call covers all active contracts in the round. Input and output are parallel `Vec`s in the same order.
 
