@@ -11,7 +11,11 @@ FuzzMing is an open source tool that closes the loop between an LLM and a fuzzer
 
 **Current stack: Solidity + Foundry.** The first supported target is Solidity smart contracts fuzzed with Foundry. But FuzzMing is not a Foundry tool, it is built on hexagonal architecture specifically so that new languages and fuzzers plug in as adapters without touching the core. Rust + cargo-fuzz, Vyper + Echidna, Move + any fuzzer: each is a set of adapters away. The orchestrator, session loop, LLM integration, and report format are language and fuzzer agnostic.
 
----
+## Demo
+
+Watch the demonstration of FuzzMing:
+
+[![FuzzMing Demo](https://img.youtube.com/vi/MW7aNL9ChWw/maxresdefault.jpg)](https://youtu.be/MW7aNL9ChWw)
 
 ## Contents
 
